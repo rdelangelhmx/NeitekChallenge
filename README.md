@@ -1,5 +1,4 @@
-# NeitekChallenge
-Neitek Challenge
+# Neitek Challenge
 
 ## EJERCICIO
 Para desarrollar el siguiente ejercicio es necesario contar con el requisito funcional (RF) descrito en documento RF-ToDo.pdf que se adjunta.
