@@ -1,0 +1,47 @@
+﻿@inject IMetasService metasService
+@inject ToastService toastService
+
+<div class="card">
+    <div classs="row">
+        <div class="col-11">
+            <h4>@dataMetas.Nombre</h4>
+        </div>
+        <div class="col-1 text-end">
+            <button type="button" class="btn btn-sm"><i class="bi bi-pencil"></i></button>
+            <button type="button" class="btn btn-sm"><i class="bi bi-trash"></i></button>
+        </div>
+    </div>
+    <div class="row">
+        <label>Fecha Creada:</label> @dataMetas.Creada!.Value.ToString("dd/MM/yyyy")        
+    </div>
+    <div class="row">
+        <div class="col-8">
+            <label>Completadas:</label> @dataMetas.Tareas.Count(w => w.Estado!.Value)/@dataMetas.TotalTareas!.Value
+        </div>
+        <div class="col-4">
+            @($"{completadas}%")
+        </div>
+        <div class="col-12">
+            <Progress>
+                <ProgressBar Color="ProgressColor.Secondary" Width="@completadas" />
+            </Progress>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public MetasModel dataMetas { get; set; }
+    [Parameter] public EventCallback<MetasModel> dataMetasChanged { get; set; }
+
+    [Parameter] public EventCallback<MetasModel> OnEdit { get; set; }
+    [Parameter] public EventCallback<MetasModel> OnDelete { get; set; }
+
+    int completadas = 0;
+
+    protected override async void OnInitialized()
+    {
+        completadas = dataMetas.TotalTareas!.Value > 0 ? dataMetas.Tareas.Count(w => w.Estado!.Value) / dataMetas.TotalTareas!.Value : 0;
+        base.OnInitialized();
+    }
+
+}

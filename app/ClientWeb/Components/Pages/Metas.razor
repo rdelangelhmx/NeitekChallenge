@@ -1,0 +1,164 @@
+﻿@page "/metas"
+
+@inject IMetasService metasService
+@inject ITareasService tareasService
+@inject ToastService toastService
+
+<PageTitle>Metas</PageTitle>
+
+<div class="top-row p-2 bg-white mb-2 border-3 border-start border-success">   
+    <h4 class="mt-2"><i class="bi bi-list-task"></i> Control de Metas</h4>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-4">
+                <div class="row">
+                    <button class="btn btn-success col-5" @onclick=AddNewMeta><span class="bi bi-plus-lg"></span> Nueva Meta</button>
+                </div>
+                @foreach(var meta in metasList)
+                {
+                <div class="row">
+                    <!--<MetasRow dataMetas="meta" OnEdit="OnEditMeta" OnDelete="OnDeleteMeta" />-->
+                    <div class="bg-gray400">
+                        <div classs="row">
+                            <div class="col-11">
+                                <h4>@meta.Nombre</h4>
+                            </div>
+                            <div class="col-1 text-end">
+                                <button type="button" class="btn btn-sm"><i class="bi bi-pencil"></i></button>
+                                <button type="button" class="btn btn-sm"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label>Fecha Creada:</label> @meta.Creada!.Value.ToString("dd/MM/yyyy")
+                        </div>
+                        <div class="row">
+                            <div class="col-8">
+                                <label>Completadas:</label> @meta.Tareas.Count(w => w.Estado!.Value)/@meta.TotalTareas!.Value
+                            </div>
+                            <div class="col-4">
+                                @($"{meta.Porcentaje!.Value}%")
+                            </div>
+                            <div class="col-12">
+                                @if (meta.TotalTareas!.HasValue)
+                                {
+                                    <Progress>
+                                        <ProgressBar Color="ProgressColor.Secondary" Width="@((double)meta.Porcentaje!.Value)" />
+                                    </Progress>
+                                }
+                                else
+                                {
+                                    <Progress>
+                                        <ProgressBar Color="ProgressColor.Secondary" Width="0" />
+                                    </Progress>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+            <div class="col-8">
+                <div class="card">
+                    <div class="card-header bg-success">
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <button class="btn btn-success col-3" @onclick=AddNewTarea><span class="bi bi-plus-lg"></span> Agregar Tarea</button>
+                        </div>
+                        <div class="row">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<Modal @ref="mMetas" IsVerticallyCentered="true" HeaderCssClass="bg-success" />
+
+<Modal @ref="mTareas" IsVerticallyCentered="true" HeaderCssClass="bg-success" />
+
+@code {
+    public List<MetasModel> metasList { get; set; } = new List<MetasModel>();
+
+    Modal mMetas = default!;
+    Modal mTareas = default!;
+
+    protected override async void OnInitialized()
+    {
+        // Load Metas
+        try
+        {
+            var result = await metasService.GetAllAsync();
+            if (result is null)
+                throw new Exception("No se encontraron registros");
+            metasList = result.ToList();
+        }
+        catch (Exception ex)
+        {
+            metasList = new List<MetasModel>();
+            toastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+        finally
+        {
+            base.OnInitialized();
+        }
+    }
+
+    private async Task AddNewMeta()
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("dataMetas", new MetasModel());
+        parameters.Add("OnCloseCallback", EventCallback.Factory.Create<MouseEventArgs>(this, CloseMetas));
+        await mMetas.ShowAsync<MetasForm>(title: "Agregar nueva Meta", parameters: parameters);
+    }
+
+    private async Task CloseMetas(MouseEventArgs e)
+    {
+        await mMetas.HideAsync();
+    }
+
+    private async Task OnEditMeta(MetasModel metasModel)
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("dataMetas", metasModel);
+        parameters.Add("OnCloseCallback", EventCallback.Factory.Create<MouseEventArgs>(this, CloseMetas));
+        await mMetas.ShowAsync<MetasForm>(title: "Editar Meta", parameters: parameters);
+    }
+
+    private async Task OnDeleteMeta(MetasModel metasModel)
+    {
+        try
+        {
+            var result = await metasService.DeleteAsync(metasModel);
+            if (result is not null)
+            {
+                toastService.Notify(new(ToastType.Success, $"El registro se ha agregado"));
+                metasList = metasList!.Where(w => w.MetaId != metasModel.MetaId).ToList();
+            }
+            else
+                throw new Exception("No se puede agregar el registro");
+        }
+        catch (Exception ex)
+        {
+            toastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+    }
+
+    private async Task AddNewTarea()
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("dataTareas", new TareasModel());
+        parameters.Add("OnCloseCallback", EventCallback.Factory.Create<MouseEventArgs>(this, CloseTareas));
+        await mMetas.ShowAsync<TareasForm>(title: "Agregar nueva Tarea", parameters: parameters);
+    }
+
+    private async Task CloseTareas(MouseEventArgs e)
+    {
+        await mTareas.HideAsync();
+    }
+}

@@ -1,0 +1,84 @@
+﻿@inject IMetasService metasService
+@inject ToastService toastService
+
+<EditForm Model="dataMetas" OnSubmit="OnSubmitMetas" novalidate>
+    <DataAnnotationsValidator />
+    <ValidationSummary class="invalid-feedback" />
+    <div class="row text-center mt-3">
+        <button type="submit" class="btn btn-success">Aceptar</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick=OnCloseCallback>Cancelar</button>
+    </div>
+</EditForm>
+
+@code {
+    [CascadingParameter]
+    public Metas principal { get; set; }
+
+    [Parameter] public MetasModel dataMetas { get; set; }
+
+    [Parameter] public EventCallback<MouseEventArgs> OnCloseCallback { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    private async Task OnSubmitMetas(EditContext editContext)
+    {
+        var err = 0;
+        try
+        {
+            editContext.SetFieldCssClassProvider(new CustomFieldClassProvider());
+            var validationMessages = new ValidationMessageStore(editContext);
+            // Clear previous error messages
+            validationMessages.Clear();
+            editContext.NotifyValidationStateChanged();
+
+            StateHasChanged();
+
+            // Validate data
+            var fi = new FieldIdentifier(dataMetas, "Nombre");
+            if (string.IsNullOrEmpty(dataMetas.Nombre))
+            {
+                validationMessages.Add(fi, "El campo nombre es requerido");
+                err++;
+            }
+            else
+                validationMessages.Clear(fi);
+            editContext.NotifyValidationStateChanged();
+
+            var isValid = editContext.Validate();
+
+            // Validate the form
+            if (err > 0)
+                throw new Exception("Algunos campos requieren su etención");
+
+            // Save the changes
+            if (dataMetas.MetaId.HasValue) // Add New
+            {
+                var result = await metasService.AddAsync(dataMetas);
+                if (result is not null)
+                {
+                    toastService.Notify(new(ToastType.Success, $"El registro se ha agregado"));
+                    principal.metasList!.Append(result);                   
+                }
+                else
+                    throw new Exception("No se puede agregar el registro");
+            }
+            else // Update
+            {
+                var result = await metasService.UpdateAsync(dataMetas);
+                if (result is not null)
+                    toastService.Notify(new(ToastType.Success, $"El registro se ha actualizado"));
+                else
+                    throw new Exception("No se puede actualizar el registro");
+            }
+            await OnCloseCallback.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            editContext.MarkAsUnmodified();
+            toastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+    }
+}
