@@ -1,17 +1,17 @@
 ﻿@inject IMetasService metasService
 @inject ToastService toastService
 
-<div class="border border-1 rounded-1 p-2">
+<div class="btn bg-row-success border border-1 rounded-1 p-2 mb-2 text-start" @onclick="@(() => OnSelect.InvokeAsync(dataMetas))">
     <div class="row">
         <div class="col-8">
             <span class="h5">@dataMetas.Nombre</span>
         </div>
         <div class="col-4 text-end">
-            <button type="button" class="btn btn-sm"><i class="bi bi-pencil"></i></button>
-            <button type="button" class="btn btn-sm"><i class="bi bi-trash"></i></button>
+            <button type="button" class="btn btn-sm" @onclick="@(() => OnEdit.InvokeAsync(dataMetas))"><i class="bi bi-pencil"></i></button>
+            <button type="button" class="btn btn-sm" @onclick="@(() => OnDelete.InvokeAsync(dataMetas))"><i class="bi bi-trash"></i></button>
         </div>
     </div>
-    <div class="row">
+    <div class="row mb-3">
         <div class="col-12">
             Fecha Creada: @dataMetas.Creada!.Value.ToString("dd/MM/yyyy")
         </div>
@@ -35,6 +35,7 @@
     [Parameter] public MetasModel dataMetas { get; set; }
     [Parameter] public EventCallback<MetasModel> dataMetasChanged { get; set; }
 
+    [Parameter] public EventCallback<MetasModel> OnSelect { get; set; }
     [Parameter] public EventCallback<MetasModel> OnEdit { get; set; }
     [Parameter] public EventCallback<MetasModel> OnDelete { get; set; }
 

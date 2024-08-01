@@ -4,9 +4,16 @@
 <EditForm Model="dataTareas" OnSubmit="OnSubmitTareas" novalidate>
     <DataAnnotationsValidator />
     <ValidationSummary class="invalid-feedback" />
-    <div class="row text-center mt-3">
-        <button type="submit" class="btn btn-success">Aceptar</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick=OnCloseCallback>Cancelar</button>
+    <div class="row">
+        <div class="col-8 mb-2">
+            <label for="Nombre">Nombre:</label>
+            <InputText id="Nombre" placeholder="" required @bind-Value=dataTareas.Nombre class="form-control" />
+        </div>
+    </div>
+    <div class="row mt-3">
+        <button type="submit" class="btn btn-success col-3 offset-3">Aceptar</button>
+        &nbsp;&nbsp;&nbsp;
+        <button type="button" class="btn btn-secondary col-3" data-dismiss="modal" @onclick=OnCloseCallback>Cancelar</button>
     </div>
 </EditForm>
 

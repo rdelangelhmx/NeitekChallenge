@@ -1,4 +1,5 @@
-﻿using Server.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Server.Entities;
 using Server.Interfaces;
 using Server.Persistence;
 
@@ -15,7 +16,7 @@ public class MetasRepository : IMetasRepository
     {
         try
         {
-            return context.TblMetas.ToList();
+            return context.TblMetas.Include(i => i.TblTareas).ToList();
         }
         catch (Exception ex)
         {
@@ -27,7 +28,7 @@ public class MetasRepository : IMetasRepository
     {
         try
         {
-            return context.TblMetas.FirstOrDefault(w => w.MetaId == id);
+            return context.TblMetas.Include(i => i.TblTareas).FirstOrDefault(w => w.MetaId == id);
         }
         catch (Exception ex)
         {

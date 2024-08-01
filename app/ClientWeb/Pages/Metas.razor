@@ -3,7 +3,7 @@
 @inject IMetasService metasService
 @inject ITareasService tareasService
 @inject ToastService toastService
-
+@inject PreloadService preloadService
 <PageTitle>Metas</PageTitle>
 
 <div class="top-row p-2 bg-white mb-2 border-3 border-start border-success">   
@@ -17,27 +17,69 @@
                 <div class="row mb-2">
                     <button class="btn btn-success col-5" @onclick=AddNewMeta><span class="bi bi-plus-lg"></span> Nueva Meta</button>
                 </div>
-                <div class="row mb-2 w-100">
-                    <table class="table table-success table-striped table-hover">
+                <div class="row mb-2 w-100 p-0 table-success">
                 @foreach (var meta in metasList)
                 {
-                    <tr @onclick="@(() => OnMetaSelected(meta.MetaId))"><td>
-                        <MetasRow dataMetas="meta" OnEdit="OnEditMeta" OnDelete="OnDeleteMeta" />
-                    </td></tr>
+                    <MetasRow dataMetas="meta" OnSelect="OnSelectMeta" OnEdit="OnEditMeta" OnDelete="OnDeleteMeta" />
                 }
-                    </table>
                 </div>
             </div>
             <div class="col-8">
-                <div class="card">
-                    <div class="card-header bg-success">
-                    </div>
+                <div class="card @showMeta">
+                    <div class="card-header bg-success text-white">@sMeta.Nombre</div>
                     <div class="card-body">
-                        <div class="row">
-                            <button class="btn btn-success col-3" @onclick=AddNewTarea><span class="bi bi-plus-lg"></span> Agregar Tarea</button>
+                        <div class="row mb-2 ms-0">
+                            <button class="btn btn-success col-3 @showMeta" @onclick=AddNewTarea><span class="bi bi-plus-lg"></span> Agregar Tarea</button>
+                            &nbsp;
+                            <button class="btn btn-success col-3 @showSelected" @onclick=OnCompletarTarea><span class="bi bi-check-circle"></span> Agregar Tarea</button>
+                            &nbsp;
+                            <button class="btn btn-success col-3 @showSelected" @onclick=OnEditarTarea><span class="bi bi-pencil"></span> Agregar Tarea</button>
+                            &nbsp;
+                            <button class="btn btn-success col-3 @showSelected" @onclick=OnEliminarTarea><span class="bi bi-trash"></span> Agregar Tarea</button>
                         </div>
                         <div class="row">
-
+                            <Grid @ref=grid TItem="TareasModel"
+                                  Class="table table-hover table-bordered table-striped" 
+                                  Data="tareasList"
+                                  AllowFiltering="true"
+                                  AllowPaging="true"
+                                  PageSize="5"
+                                  AllowSorting="true"
+                                  AllowSelection="true"
+                                  SelectionMode="GridSelectionMode.Multiple"
+                                  EmptyText="No hay registros para mostrar"
+                                  Responsive="true">
+                                <GridColumns>
+                                    <GridColumn TItem="TareasModel" HeaderText="" PropertyName="Favorita" SortKeySelector="item => item.Favorita">
+                                        <button type="button" class="btn btn-sm" @onclick="@(() => OnFavoritaTarea(context))">
+                                        @if(context.Favorita!.Value)
+                                        {
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-star"></i>
+                                        }
+                                        </button>
+                                    </GridColumn>
+                                    <GridColumn TItem="TareasModel" HeaderText="Tarea" PropertyName="Nombre" SortKeySelector="item => item.Nombre">
+                                        @context.Nombre
+                                    </GridColumn>
+                                    <GridColumn TItem="TareasModel" HeaderText="Fecha" PropertyName="Creada" SortKeySelector="item => item.Creada!.Value.Date">
+                                        @context.Creada!.Value.ToString("dd/MM/yyyy")
+                                    </GridColumn>
+                                    <GridColumn TItem="TareasModel" HeaderText="Estado" PropertyName="Estado" SortKeySelector="item => item.Estado">
+                                        @if (context.Estado!.Value)
+                                        {
+                                            <span class="text-success">Completada</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Abierta</span>
+                                        }
+                                    </GridColumn>
+                                </GridColumns>
+                            </Grid>
                         </div>
                     </div>
                 </div>
@@ -46,25 +88,38 @@
     </div>
 </div>
 
-<Modal @ref="mMetas" IsVerticallyCentered="true" HeaderCssClass="bg-success" />
-
-<Modal @ref="mTareas" IsVerticallyCentered="true" HeaderCssClass="bg-success" />
+<Modal @ref="mMetas" IsVerticallyCentered="true" HeaderCssClass="bg-success text-white" />
+<Modal @ref="mTareas" IsVerticallyCentered="true" HeaderCssClass="bg-success  text-white" />
+<ConfirmDialog @ref="dialog" />
 
 @code {
     public IEnumerable<MetasModel> metasList { get; set; } = new List<MetasModel>();
+    public IEnumerable<TareasModel> tareasList { get; set; } = new List<TareasModel>();
+
+    Grid<TareasModel> grid = default!;
+    IEnumerable<TareasModel> sTareas { get; set; } = new List<TareasModel>();
 
     Modal mMetas = default!;
     Modal mTareas = default!;
 
-    protected override async void OnInitialized()
+    string showMeta = "hidden";
+    string showSelected = "hidden";
+    MetasModel sMeta = new();
+    TareasModel sTarea = new();
+    ConfirmDialog dialog = default!;
+
+    protected override async Task OnInitializedAsync()
     {
-        // Load Metas
         try
         {
+            preloadService.Show(SpinnerColor.Light, "Cargando Metas...");
+            // Load Metas
             var result = await metasService.GetAllAsync();
             if (result is null)
                 throw new Exception("No se encontraron registros");
             metasList = result.ToList();
+            await OnSelectMeta(metasList.First());
+            preloadService.Hide();
         }
         catch (Exception ex)
         {
@@ -90,9 +145,19 @@
         await mMetas.HideAsync();
     }
 
-    private async Task OnMetaSelected(MetasModel metasModel)
+    private async Task OnSelectMeta(MetasModel metasModel)
     {
-        toastService.Notify(new(ToastType.Info,$"Meta: {metasModel.Nombre}"));
+        showMeta = "show";
+        showSelected = "hidden";
+        sMeta = metasModel;
+        tareasList = new List<TareasModel>();
+        var result  = await tareasService.GetAllAsync(metasModel.MetaId!.Value);
+        if(result is not null)
+        {
+            tareasList = result;
+            await grid.RefreshDataAsync();
+        }
+        StateHasChanged();
     }
 
     private async Task OnEditMeta(MetasModel metasModel)
@@ -107,14 +172,33 @@
     {
         try
         {
-            var result = await metasService.DeleteAsync(metasModel);
-            if (result is not null)
+            var options = new ConfirmDialogOptions
+                {
+                    YesButtonText = "Aceptar",
+                    YesButtonColor = ButtonColor.Success,
+                    NoButtonText = "Cancelar",
+                    NoButtonColor = ButtonColor.Secondary, 
+                    HeaderCssClass = "bg-success text-white", 
+                    DialogCssClass = "text-center",
+                    IsVerticallyCentered = true
+                };
+
+            var confirmation = await dialog.ShowAsync(
+                title: "¿Está seguro?",
+                message1: $"Que desea eliminar la Meta: {metasModel.Nombre}",
+                confirmDialogOptions: options);
+
+            if (confirmation)
             {
-                toastService.Notify(new(ToastType.Success, $"El registro se ha agregado"));
-                metasList = metasList!.Where(w => w.MetaId != metasModel.MetaId);
+                var result = await metasService.DeleteAsync(metasModel);
+                if (result is not null)
+                {
+                    toastService.Notify(new(ToastType.Success, $"El registro se ha eliminado"));
+                    metasList = metasList!.Where(w => w.MetaId != metasModel.MetaId);
+                }
+                else
+                    toastService.Notify(new(ToastType.Danger, $"No se puede eliminar el registro"));
             }
-            else
-                throw new Exception("No se puede agregar el registro");
         }
         catch (Exception ex)
         {
@@ -127,11 +211,104 @@
         var parameters = new Dictionary<string, object>();
         parameters.Add("dataTareas", new TareasModel());
         parameters.Add("OnCloseCallback", EventCallback.Factory.Create<MouseEventArgs>(this, CloseTareas));
-        await mMetas.ShowAsync<TareasForm>(title: "Agregar nueva Tarea", parameters: parameters);
+        await mTareas.ShowAsync<TareasForm>(title: "Agregar nueva Tarea", parameters: parameters);
     }
 
     private async Task CloseTareas(MouseEventArgs e)
     {
         await mTareas.HideAsync();
+    }
+
+    private async Task OnFavoritaTarea(TareasModel tarea)
+    {
+        try
+        {
+            tarea.Favorita = !tarea.Favorita;
+            var result = await tareasService.UpdateAsync(tarea);
+            if (result is not null)
+                toastService.Notify(new(ToastType.Success, $"Se ha actualizado la Tarea: {tarea.Nombre}"));
+            else
+                throw new Exception($"No se puede actualizar la Tarea: {tarea.Nombre}");
+        }
+        catch (Exception ex)
+        {
+            toastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+    }
+
+    private async Task OnCompletarTarea()
+    {
+        try
+        {
+            foreach (var tarea in sTareas)
+            {
+                tarea.Estado = !tarea.Estado;
+                var result = await tareasService.UpdateAsync(tarea);
+                if (result is not null)
+                    toastService.Notify(new(ToastType.Success, $"Se ha actualizado la Tarea: {tarea.Nombre}"));
+                else
+                    throw new Exception($"No se puede actualizar la Tarea: {tarea.Nombre}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+    }
+
+    private async Task OnEditarTarea()
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("dataTareas", sTarea);
+        parameters.Add("OnCloseCallback", EventCallback.Factory.Create<MouseEventArgs>(this, CloseTareas));
+        await mTareas.ShowAsync<TareasForm>(title: "Editar Tarea", parameters: parameters);
+    }
+
+    private async Task OnEliminarTarea()
+    {
+        var options = new ConfirmDialogOptions
+            {
+                YesButtonText = "Aceptar",
+                YesButtonColor = ButtonColor.Success,
+                NoButtonText = "Cancelar",
+                NoButtonColor = ButtonColor.Secondary,
+                HeaderCssClass = "bg-success text-white",
+                DialogCssClass = "text-center",
+                IsVerticallyCentered = true
+            };
+
+        var confirmation = await dialog.ShowAsync(
+            title: "¿Está seguro?",
+            message1: $"Que desea eliminar la Tarea: {sTarea.Nombre}",
+            confirmDialogOptions: options);
+
+        if (confirmation)
+        {
+            var result = await tareasService.DeleteAsync(sTarea);
+            if (result is not null)
+                toastService.Notify(new(ToastType.Success, $"El registro se ha eliminado"));
+            else
+                toastService.Notify(new(ToastType.Danger, $"No se puede eliminar el registro"));
+        }
+    }
+
+    // private async Task<GridDataProviderResult<TareasModel>> TareasDataProvider(GridDataProviderRequest<TareasModel> request)
+    // {
+    //     if (tareasList is null || (metasList.Count() > 0 && tareasList.Count() == 0))
+    //     {
+    //         await OnSelectMeta(metasList.First());
+    //         tareasList = sMeta.Tareas;
+    //     }
+    //     else
+    //         tareasList = new List<TareasModel>();
+
+    //     return await Task.FromResult(request.ApplyTo(tareasList));
+    // }
+
+    private Task OnSelectedItemsChanged(HashSet<TareasModel> tarea)
+    {
+        sTareas = tarea.ToList();
+        showSelected = sTareas.Count() > 0 ? "show" : "hidden";
+        return Task.CompletedTask;
     }
 }

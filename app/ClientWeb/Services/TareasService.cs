@@ -20,7 +20,7 @@ public class TareasService : ITareasService
     {
         try
         {
-            using (var httpResponse = await api.HttpGetRequest($"/Tareas/GetAll/{metaId}"))
+            using (var httpResponse = await api.HttpGetRequest($"/Tareas/GetAll?metaId={metaId}"))
             {
                 var streamResponse = await httpResponse.Content.ReadAsStreamAsync();
                 if (httpResponse.IsSuccessStatusCode)
@@ -41,7 +41,7 @@ public class TareasService : ITareasService
     {
         try
         {
-            using (var httpResponse = await api.HttpGetRequest($"/Tareas/GetById/{id}/{metaId}"))
+            using (var httpResponse = await api.HttpGetRequest($"/Tareas/GetById?tareaId={id}&metaId={metaId}"))
             {
                 var streamResponse = await httpResponse.Content.ReadAsStreamAsync();
                 if (httpResponse.IsSuccessStatusCode)
