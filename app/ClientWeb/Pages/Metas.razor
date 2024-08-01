@@ -28,58 +28,66 @@
                 <div class="card @showMeta">
                     <div class="card-header bg-success text-white">@sMeta.Nombre</div>
                     <div class="card-body">
-                        <div class="row mb-2 ms-0">
-                            <button class="btn btn-success col-3 @showMeta" @onclick=AddNewTarea><span class="bi bi-plus-lg"></span> Agregar Tarea</button>
-                            &nbsp;
-                            <button class="btn btn-success col-3 @showSelected" @onclick=OnCompletarTarea><span class="bi bi-check-circle"></span> Agregar Tarea</button>
-                            &nbsp;
-                            <button class="btn btn-success col-3 @showSelected" @onclick=OnEditarTarea><span class="bi bi-pencil"></span> Agregar Tarea</button>
-                            &nbsp;
-                            <button class="btn btn-success col-3 @showSelected" @onclick=OnEliminarTarea><span class="bi bi-trash"></span> Agregar Tarea</button>
+                        <div class="row mb-2">
+                            <div class="col-3">
+                                <button class="btn btn-success w-100 px-1 @showMeta" @onclick=AddNewTarea><span class="bi bi-plus-lg"></span> Agregar Tarea</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-success w-100 px-1 @showSelected" @onclick=OnCompletarTarea><span class="bi bi-check-circle"></span> Completar Tarea</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-success w-100 px-1 @showSelected" @onclick=OnEditarTarea><span class="bi bi-pencil"></span> Editar Tarea</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-success w-100 px-1 @showSelected" @onclick=OnEliminarTarea><span class="bi bi-trash"></span> Eliminar Tarea</button>
+                            </div>
                         </div>
                         <div class="row">
-                            <Grid @ref=grid TItem="TareasModel"
-                                  Class="table table-hover table-bordered table-striped" 
-                                  Data="tareasList"
-                                  AllowFiltering="true"
-                                  AllowPaging="true"
-                                  PageSize="5"
-                                  AllowSorting="true"
-                                  AllowSelection="true"
-                                  SelectionMode="GridSelectionMode.Multiple"
-                                  EmptyText="No hay registros para mostrar"
-                                  Responsive="true">
-                                <GridColumns>
-                                    <GridColumn TItem="TareasModel" HeaderText="" PropertyName="Favorita" SortKeySelector="item => item.Favorita">
-                                        <button type="button" class="btn btn-sm" @onclick="@(() => OnFavoritaTarea(context))">
-                                        @if(context.Favorita!.Value)
-                                        {
-                                            <i class="bi bi-star-fill text-warning"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-star"></i>
-                                        }
-                                        </button>
-                                    </GridColumn>
-                                    <GridColumn TItem="TareasModel" HeaderText="Tarea" PropertyName="Nombre" SortKeySelector="item => item.Nombre">
-                                        @context.Nombre
-                                    </GridColumn>
-                                    <GridColumn TItem="TareasModel" HeaderText="Fecha" PropertyName="Creada" SortKeySelector="item => item.Creada!.Value.Date">
-                                        @context.Creada!.Value.ToString("dd/MM/yyyy")
-                                    </GridColumn>
-                                    <GridColumn TItem="TareasModel" HeaderText="Estado" PropertyName="Estado" SortKeySelector="item => item.Estado">
-                                        @if (context.Estado!.Value)
-                                        {
-                                            <span class="text-success">Completada</span>
-                                        }
-                                        else
-                                        {
-                                            <span>Abierta</span>
-                                        }
-                                    </GridColumn>
-                                </GridColumns>
-                            </Grid>
+                            <div class="col-12">
+                                <Grid @ref=grid TItem="TareasModel"
+                                      Class="table table-hover table-bordered table-striped w-100" 
+                                      Data="tareasList"
+                                      AllowFiltering="true"
+                                      AllowPaging="true"
+                                      PageSize="5"
+                                      AllowSorting="true"
+                                      AllowSelection="true"
+                                      SelectionMode="GridSelectionMode.Multiple"
+                                      SelectedItemsChanged="OnSelectedItemsChanged"
+                                      EmptyText="No hay registros para mostrar"
+                                      Responsive="true">
+                                    <GridColumns>
+                                        <GridColumn TItem="TareasModel" HeaderText="" PropertyName="Favorita" SortKeySelector="item => item.Favorita">
+                                            <button type="button" class="btn btn-sm" @onclick="@(() => OnFavoritaTarea(context))">
+                                            @if(context.Favorita!.Value)
+                                            {
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-star"></i>
+                                            }
+                                            </button>
+                                        </GridColumn>
+                                        <GridColumn TItem="TareasModel" HeaderText="Tarea" PropertyName="Nombre" SortKeySelector="item => item.Nombre">
+                                            @context.Nombre
+                                        </GridColumn>
+                                        <GridColumn TItem="TareasModel" HeaderText="Fecha" PropertyName="Creada" SortKeySelector="item => item.Creada">
+                                            @context.Creada!.Value.ToString("dd/MM/yyyy")
+                                        </GridColumn>
+                                        <GridColumn TItem="TareasModel" HeaderText="Estado" PropertyName="Estado" SortKeySelector="item => item.Estado">
+                                            @if (context.Estado!.Value)
+                                            {
+                                                <span class="text-success">Completada</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Abierta</span>
+                                            }
+                                        </GridColumn>
+                                    </GridColumns>
+                                </Grid>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -110,16 +118,16 @@
 
     protected override async Task OnInitializedAsync()
     {
+        preloadService.Show(SpinnerColor.Light, "Cargando Metas...");
+        StateHasChanged();
         try
         {
-            preloadService.Show(SpinnerColor.Light, "Cargando Metas...");
             // Load Metas
             var result = await metasService.GetAllAsync();
             if (result is null)
                 throw new Exception("No se encontraron registros");
-            metasList = result.ToList();
+            metasList = result;
             await OnSelectMeta(metasList.First());
-            preloadService.Hide();
         }
         catch (Exception ex)
         {
@@ -128,6 +136,8 @@
         }
         finally
         {
+            preloadService.Hide();
+            StateHasChanged();
             base.OnInitialized();
         }
     }
@@ -150,13 +160,9 @@
         showMeta = "show";
         showSelected = "hidden";
         sMeta = metasModel;
-        tareasList = new List<TareasModel>();
-        var result  = await tareasService.GetAllAsync(metasModel.MetaId!.Value);
-        if(result is not null)
-        {
-            tareasList = result;
-            await grid.RefreshDataAsync();
-        }
+        tareasList = metasModel.Tareas;
+        grid.Data = tareasList;
+        await grid.RefreshDataAsync();
         StateHasChanged();
     }
 
@@ -291,19 +297,6 @@
                 toastService.Notify(new(ToastType.Danger, $"No se puede eliminar el registro"));
         }
     }
-
-    // private async Task<GridDataProviderResult<TareasModel>> TareasDataProvider(GridDataProviderRequest<TareasModel> request)
-    // {
-    //     if (tareasList is null || (metasList.Count() > 0 && tareasList.Count() == 0))
-    //     {
-    //         await OnSelectMeta(metasList.First());
-    //         tareasList = sMeta.Tareas;
-    //     }
-    //     else
-    //         tareasList = new List<TareasModel>();
-
-    //     return await Task.FromResult(request.ApplyTo(tareasList));
-    // }
 
     private Task OnSelectedItemsChanged(HashSet<TareasModel> tarea)
     {

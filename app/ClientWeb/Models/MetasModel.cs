@@ -1,4 +1,6 @@
-﻿namespace Client.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace Client.Models;
 
 public class MetasModel
 {
@@ -7,5 +9,6 @@ public class MetasModel
     public DateTime? Creada { get; set; }
     public int? TotalTareas { get; set; }
     public decimal? Porcentaje { get; set; }
+    [JsonPropertyName("tblTareas")]
     public ICollection<TareasModel> Tareas { get; set; } = new List<TareasModel>();
 }
