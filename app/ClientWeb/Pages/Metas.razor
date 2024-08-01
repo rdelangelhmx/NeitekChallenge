@@ -264,10 +264,15 @@
 
     private async Task OnEditarTarea()
     {
-        var parameters = new Dictionary<string, object>();
-        parameters.Add("dataTareas", sTarea);
-        parameters.Add("OnCloseCallback", EventCallback.Factory.Create<MouseEventArgs>(this, CloseTareas));
-        await mTareas.ShowAsync<TareasForm>(title: "Editar Tarea", parameters: parameters);
+        if (sTareas.Count() == 1)
+        {
+            var parameters = new Dictionary<string, object>();
+            parameters.Add("dataTareas", sTarea);
+            parameters.Add("OnCloseCallback", EventCallback.Factory.Create<MouseEventArgs>(this, CloseTareas));
+            await mTareas.ShowAsync<TareasForm>(title: "Editar Tarea", parameters: parameters);
+        }
+        else 
+            toastService.Notify(new(ToastType.Warning, $"Debe seleccionar solo una Tarea para poder editarla"));
     }
 
     private async Task OnEliminarTarea()
