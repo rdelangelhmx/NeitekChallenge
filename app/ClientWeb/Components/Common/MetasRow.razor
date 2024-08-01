@@ -1,29 +1,31 @@
 ﻿@inject IMetasService metasService
 @inject ToastService toastService
 
-<div class="card">
-    <div classs="row">
-        <div class="col-11">
-            <h4>@dataMetas.Nombre</h4>
+<div class="border border-1 rounded-1 p-2">
+    <div class="row">
+        <div class="col-8">
+            <span class="h5">@dataMetas.Nombre</span>
         </div>
-        <div class="col-1 text-end">
+        <div class="col-4 text-end">
             <button type="button" class="btn btn-sm"><i class="bi bi-pencil"></i></button>
             <button type="button" class="btn btn-sm"><i class="bi bi-trash"></i></button>
         </div>
     </div>
     <div class="row">
-        <label>Fecha Creada:</label> @dataMetas.Creada!.Value.ToString("dd/MM/yyyy")        
+        <div class="col-12">
+            Fecha Creada: @dataMetas.Creada!.Value.ToString("dd/MM/yyyy")
+        </div>
     </div>
     <div class="row">
         <div class="col-8">
-            <label>Completadas:</label> @dataMetas.Tareas.Count(w => w.Estado!.Value)/@dataMetas.TotalTareas!.Value
+            Completadas: @dataMetas.Tareas.Count(w => w.Estado!.Value)/@dataMetas.TotalTareas!.Value
         </div>
-        <div class="col-4">
-            @($"{completadas}%")
+        <div class="col-4 text-end">
+            @($"{dataMetas.Porcentaje!.Value}%")
         </div>
-        <div class="col-12">
+        <div class="col-12 mb-1">
             <Progress>
-                <ProgressBar Color="ProgressColor.Secondary" Width="@completadas" />
+                <ProgressBar Color="ProgressColor.Secondary" Width="@((double)dataMetas.Porcentaje!.Value)" />
             </Progress>
         </div>
     </div>

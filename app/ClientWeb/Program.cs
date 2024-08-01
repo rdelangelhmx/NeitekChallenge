@@ -1,5 +1,4 @@
 using Client.Classes;
-using Client.Components;
 using Client.Interfaces;
 using Client.Services;
 using Microsoft.Extensions.Options;
@@ -19,6 +18,10 @@ var configApp = AppConfiguration.GetSection("Configuration").Get<ConfigApp>();
 // Add Configuration
 builder.Services.Configure<ConfigApp>(AppConfiguration.GetSection("Configuration"));
 builder.Services.AddSingleton(s => s.GetRequiredService<IOptions<ConfigApp>>().Value);
+
+// Add services to the container.
+builder.Services.AddRazorPages();
+builder.Services.AddServerSideBlazor();
 
 builder.Services.AddHttpClient<IApiService, ApiService>(configApp.Api.Client)
     .ConfigureHttpClient(httpClient =>
@@ -40,10 +43,6 @@ builder.Services.AddHttpClient<IApiService, ApiService>(configApp.Api.Client)
         };
     });
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
 // Add Api Services
 builder.Services.AddTransient<IApiService, ApiService>();
 builder.Services.AddScoped<IMetasService, MetasService>();
@@ -52,12 +51,13 @@ builder.Services.AddScoped<ITareasService, TareasService>();
 // Add Nugget Services
 builder.Services.AddBlazorBootstrap();
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -65,8 +65,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
-app.UseAntiforgery();
 
-app.MapRazorComponents<App>();
+app.UseRouting();
+
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 
 app.Run();

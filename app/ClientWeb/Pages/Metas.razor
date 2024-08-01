@@ -14,51 +14,19 @@
     <div class="card-body">
         <div class="row">
             <div class="col-4">
-                <div class="row">
+                <div class="row mb-2">
                     <button class="btn btn-success col-5" @onclick=AddNewMeta><span class="bi bi-plus-lg"></span> Nueva Meta</button>
                 </div>
-                @foreach(var meta in metasList)
+                <div class="row mb-2 w-100">
+                    <table class="table table-success table-striped table-hover">
+                @foreach (var meta in metasList)
                 {
-                <div class="row">
-                    <!--<MetasRow dataMetas="meta" OnEdit="OnEditMeta" OnDelete="OnDeleteMeta" />-->
-                    <div class="bg-gray400">
-                        <div classs="row">
-                            <div class="col-11">
-                                <h4>@meta.Nombre</h4>
-                            </div>
-                            <div class="col-1 text-end">
-                                <button type="button" class="btn btn-sm"><i class="bi bi-pencil"></i></button>
-                                <button type="button" class="btn btn-sm"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <label>Fecha Creada:</label> @meta.Creada!.Value.ToString("dd/MM/yyyy")
-                        </div>
-                        <div class="row">
-                            <div class="col-8">
-                                <label>Completadas:</label> @meta.Tareas.Count(w => w.Estado!.Value)/@meta.TotalTareas!.Value
-                            </div>
-                            <div class="col-4">
-                                @($"{meta.Porcentaje!.Value}%")
-                            </div>
-                            <div class="col-12">
-                                @if (meta.TotalTareas!.HasValue)
-                                {
-                                    <Progress>
-                                        <ProgressBar Color="ProgressColor.Secondary" Width="@((double)meta.Porcentaje!.Value)" />
-                                    </Progress>
-                                }
-                                else
-                                {
-                                    <Progress>
-                                        <ProgressBar Color="ProgressColor.Secondary" Width="0" />
-                                    </Progress>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <tr @onclick="@(() => OnMetaSelected(meta.MetaId))"><td>
+                        <MetasRow dataMetas="meta" OnEdit="OnEditMeta" OnDelete="OnDeleteMeta" />
+                    </td></tr>
                 }
+                    </table>
+                </div>
             </div>
             <div class="col-8">
                 <div class="card">
@@ -83,7 +51,7 @@
 <Modal @ref="mTareas" IsVerticallyCentered="true" HeaderCssClass="bg-success" />
 
 @code {
-    public List<MetasModel> metasList { get; set; } = new List<MetasModel>();
+    public IEnumerable<MetasModel> metasList { get; set; } = new List<MetasModel>();
 
     Modal mMetas = default!;
     Modal mTareas = default!;
@@ -122,6 +90,11 @@
         await mMetas.HideAsync();
     }
 
+    private async Task OnMetaSelected(MetasModel metasModel)
+    {
+        toastService.Notify(new(ToastType.Info,$"Meta: {metasModel.Nombre}"));
+    }
+
     private async Task OnEditMeta(MetasModel metasModel)
     {
         var parameters = new Dictionary<string, object>();
@@ -138,7 +111,7 @@
             if (result is not null)
             {
                 toastService.Notify(new(ToastType.Success, $"El registro se ha agregado"));
-                metasList = metasList!.Where(w => w.MetaId != metasModel.MetaId).ToList();
+                metasList = metasList!.Where(w => w.MetaId != metasModel.MetaId);
             }
             else
                 throw new Exception("No se puede agregar el registro");
