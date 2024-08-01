@@ -83,7 +83,7 @@ public class MetasService : IMetasService
     {
         try
         {
-            using (var httpResponse = await api.HttpPostRequest($"/Metas/Update", ApiUtils.GetBodyContent(data)))
+            using (var httpResponse = await api.HttpPutRequest($"/Metas/Update", ApiUtils.GetBodyContent(data)))
             {
                 var streamResponse = await httpResponse.Content.ReadAsStreamAsync();
                 if (httpResponse.IsSuccessStatusCode)
@@ -104,7 +104,7 @@ public class MetasService : IMetasService
     {
         try
         {
-            using (var httpResponse = await api.HttpPostRequest($"/Metas/Delete", ApiUtils.GetBodyContent(data)))
+            using (var httpResponse = await api.HttpDeleteRequest($"/Metas/Delete", ApiUtils.GetBodyContent(data)))
             {
                 var streamResponse = await httpResponse.Content.ReadAsStreamAsync();
                 if (httpResponse.IsSuccessStatusCode)

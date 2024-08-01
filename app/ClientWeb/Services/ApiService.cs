@@ -78,12 +78,13 @@ public class ApiService : IApiService
         return response;
     }
 
-    public async Task<HttpResponseMessage> HttpDeleteRequest(string action)
+    public async Task<HttpResponseMessage> HttpDeleteRequest(string action, HttpContent content)
     {
         try
         {
             response = await SendAsync(new HttpRequestMessage
             {
+                Content = content,
                 Method = HttpMethod.Delete,
                 RequestUri = new Uri($"{configApp.Api.Url}{action}")
             });

@@ -83,7 +83,7 @@ public class TareasService : ITareasService
     {
         try
         {
-            using (var httpResponse = await api.HttpPostRequest($"/Tareas/Update", ApiUtils.GetBodyContent(data)))
+            using (var httpResponse = await api.HttpPutRequest($"/Tareas/Update", ApiUtils.GetBodyContent(data)))
             {
                 var streamResponse = await httpResponse.Content.ReadAsStreamAsync();
                 if (httpResponse.IsSuccessStatusCode)
@@ -104,7 +104,7 @@ public class TareasService : ITareasService
     {
         try
         {
-            using (var httpResponse = await api.HttpPostRequest($"/Tareas/Delete", ApiUtils.GetBodyContent(data)))
+            using (var httpResponse = await api.HttpDeleteRequest($"/Tareas/Delete", ApiUtils.GetBodyContent(data)))
             {
                 var streamResponse = await httpResponse.Content.ReadAsStreamAsync();
                 if (httpResponse.IsSuccessStatusCode)
